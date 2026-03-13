@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Project Doctor AI</title>
+</head>
+
+<body>
+
+<h2>Project Doctor AI</h2>
+
+<textarea id="code" rows="12" cols="60"
+placeholder="Paste your code here"></textarea>
+<br><br>
+
+<button onclick="analyze()">Analyze Code</button>
+
+<h3>Suggestions</h3>
+<div id="result"></div>
+
+<script>
+
+async function analyze() {
+
+let code = document.getElementById("code").value;
+
+let response = await fetch("http://127.0.0.1:8000/analyze",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body: JSON.stringify({code: code})
+});
+
+let data = await response.json();
+
+document.getElementById("result").innerText =
+data.suggestions.join("\n");
+
+}
+
+</script>
+
+</body>
+</html>
