@@ -1,42 +1,255 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Project Doctor AI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Project Doctor AI</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="container">
 
-<h2>Project Doctor AI</h2>
+    <header class="header">
+      <div class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a0896a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6 6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/>
+          <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/>
+          <circle cx="20" cy="10" r="2"/>
+        </svg>
+      </div>
+      <h1>Project Doctor AI</h1>
+      <p>Analyze code and discover open-source projects</p>
+      
+      <nav class="nav-tabs">
+        <button class="tab active" onclick="switchTab('analyze')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          Analyze Code
+        </button>
+        <button class="tab" onclick="switchTab('discover')">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+            <path d="M9 18c-4.51 2-5-2-7-2"/>
+          </svg>
+          Discover Projects
+        </button>
+      </nav>
+    </header>
 
-<textarea id="code" rows="12" cols="60"
-placeholder="Paste your code here"></textarea>
-<br><br>
+    <section class="section" id="analyzeSection">
+      <main class="card">
+        <div class="field">
+          <div class="field-top">
+            <label for="code">Your Code</label>
+            <span class="char-count" id="charCount">0 chars</span>
+          </div>
+          <textarea id="code" placeholder="Paste your Python code here..." oninput="updateCount()"></textarea>
+        </div>
+        <button id="btn" onclick="analyze()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          Analyze Code
+        </button>
+      </main>
+      <div class="results" id="results"></div>
+    </section>
 
-<button onclick="analyze()">Analyze Code</button>
+    <section class="section" id="discoverSection" style="display:none;">
+      <div class="card">
+        <div class="field">
+          <label for="projectType">Select Project Type</label>
+          <select id="projectType">
+            <option value="web">Web Development</option>
+            <option value="ml">Machine Learning</option>
+            <option value="api">REST API</option>
+            <option value="cli">CLI Tools</option>
+            <option value="game">Game Development</option>
+            <option value="bot">Bots (Discord/Telegram)</option>
+            <option value="data">Data Analysis</option>
+          </select>
+        </div>
+        <button id="repoBtn" onclick="findRepos()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+            <path d="M9 18c-4.51 2-5-2-7-2"/>
+          </svg>
+          Find Repositories
+        </button>
+      </div>
+      <div class="results" id="repoResults"></div>
+    </section>
 
-<h3>Suggestions</h3>
-<div id="result"></div>
+  </div>
 
-<script>
+  <script>
+    let currentPage = 1;
+    let isLoading = false;
+    let currentProjectType = "";
 
-async function analyze() {
+    function switchTab(tab) {
+      const tabs = document.querySelectorAll(".tab");
+      tabs.forEach(t => t.classList.remove("active"));
+      
+      if (tab === "analyze") {
+        document.getElementById("analyzeSection").style.display = "block";
+        document.getElementById("discoverSection").style.display = "none";
+        tabs[0].classList.add("active");
+      } else {
+        document.getElementById("analyzeSection").style.display = "none";
+        document.getElementById("discoverSection").style.display = "block";
+        tabs[1].classList.add("active");
+      }
+    }
 
-let code = document.getElementById("code").value;
+    function updateCount() {
+      const len = document.getElementById("code").value.length;
+      document.getElementById("charCount").textContent = len + " chars";
+    }
 
-let response = await fetch("http://127.0.0.1:8000/analyze",{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body: JSON.stringify({code: code})
-});
+    async function analyze() {
+      const code = document.getElementById("code").value.trim();
+      const results = document.getElementById("results");
+      const btn = document.getElementById("btn");
 
-let data = await response.json();
+      if (!code) {
+        results.innerHTML = '<div class="error">Please paste some code first.</div>';
+        return;
+      }
 
-document.getElementById("result").innerText =
-data.suggestions.join("\n");
+      btn.disabled = true;
+      results.innerHTML = '<div class="spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
 
-}
+      try {
+        const res = await fetch("http://127.0.0.1:8000/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code })
+        });
 
-</script>
+        if (!res.ok) throw new Error("Server error: " + res.status);
 
+        const data = await res.json();
+        const isGood = data.suggestions.length === 1 && data.suggestions[0].includes("looks good");
+
+        results.innerHTML = `<p class="results-label">${data.suggestions.length} suggestion${data.suggestions.length !== 1 ? "s" : ""}</p>` +
+          data.suggestions.map(s =>
+            `<div class="suggestion ${isGood ? "good" : ""}">
+              <span class="dot-indicator"></span>
+              <span>${s}</span>
+            </div>`
+          ).join("");
+      } catch (err) {
+        results.innerHTML = `<div class="error">Could not connect to server. Make sure the backend is running.</div>`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function findRepos() {
+      currentPage = 1;
+      const projectType = document.getElementById("projectType").value;
+      currentProjectType = projectType;
+      const repoResults = document.getElementById("repoResults");
+      const btn = document.getElementById("repoBtn");
+
+      btn.disabled = true;
+      repoResults.innerHTML = '<div class="spinner"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+
+      await loadMoreRepos(true);
+      btn.disabled = false;
+    }
+
+    async function loadMoreRepos(isFirstLoad = false) {
+      if (isLoading) return;
+      isLoading = true;
+
+      const repoResults = document.getElementById("repoResults");
+
+      if (!isFirstLoad) {
+        const loader = document.createElement("div");
+        loader.className = "spinner";
+        loader.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
+        repoResults.appendChild(loader);
+      }
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/suggest-repos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            project_type: currentProjectType, 
+            language: "python",
+            page: currentPage,
+            per_page: 10
+          })
+        });
+
+        if (!res.ok) throw new Error("Server error: " + res.status);
+
+        const data = await res.json();
+        const repos = data.repositories;
+
+        if (isFirstLoad) {
+          if (repos[0]?.error || repos[0]?.message) {
+            repoResults.innerHTML = `<div class="error">${repos[0].error || repos[0].message}</div>`;
+            isLoading = false;
+            return;
+          }
+          repoResults.innerHTML = `<p class="results-label">${repos.length} repositories loaded</p>`;
+        } else {
+          repoResults.querySelector(".spinner")?.remove();
+        }
+
+        if (repos.length === 0) {
+          if (!isFirstLoad) {
+            const endMsg = document.createElement("p");
+            endMsg.className = "results-label";
+            endMsg.textContent = "No more repositories";
+            repoResults.appendChild(endMsg);
+          }
+          isLoading = false;
+          return;
+        }
+
+        repos.forEach(r => {
+          if (!r.error && !r.message) {
+            const card = document.createElement("div");
+            card.className = "repo-card";
+            card.innerHTML = `
+              <h3><a href="${r.url}" target="_blank">${r.name}</a></h3>
+              <p>${r.description}</p>
+              <div class="repo-meta">
+                <span>⭐ ${r.stars}</span>
+                <span>${r.language}</span>
+              </div>`;
+            repoResults.appendChild(card);
+          }
+        });
+
+        currentPage++;
+      } catch (err) {
+        if (isFirstLoad) {
+          repoResults.innerHTML = `<div class="error">Could not connect to server. Make sure the backend is running.</div>`;
+        }
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Infinite scroll
+    window.addEventListener("scroll", () => {
+      if (isLoading || !currentProjectType) return;
+      
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollTop + windowHeight >= documentHeight - 200) {
+        loadMoreRepos();
+      }
+    });
+  </script>
 </body>
 </html>
